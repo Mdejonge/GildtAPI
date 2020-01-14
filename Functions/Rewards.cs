@@ -14,7 +14,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
 using GildtAPI.Model;
-using GildtAPI.DAO;
+using GildtAPI.Controllers;
 
 namespace GildtAPI.Functions
 {
@@ -30,9 +30,11 @@ namespace GildtAPI.Functions
             string qRewardId = req.Query["id"];
             string rewardsJson;
 
+            //Filter input to prevent injection
+            qRewardName = Whitelister.GetAlphaFiltered(qRewardName);
+
             bool validId = int.TryParse(qRewardId, out int rewardId);
             bool validName = !String.IsNullOrWhiteSpace(qRewardName);
-
             if (!validId && !validName)
             {
                 //no name or ID: return all rewards
@@ -45,14 +47,14 @@ namespace GildtAPI.Functions
                         return new BadRequestObjectResult("Invalid count. Count must be 1 or higher.");
                     }
                 }
-                Reward[] rewards = await RewardsDAO.Instance.GetAllRewards();
+                Reward[] rewards = await RewardsController.Instance.GetAllRewards();
                 rewardsJson = JsonConvert.SerializeObject(rewards);
                 return new OkObjectResult(rewardsJson);
             }
             else if (!validId && validName)
             {
                 //No rewardId entered: get reward by name
-                var reward = await RewardsDAO.Instance.GetRewardByName(qRewardName);
+                var reward = await RewardsController.Instance.GetRewardByName(qRewardName);
                 if (reward == null)
                 {
                     return new NotFoundObjectResult("No rewards with this name.");
@@ -61,7 +63,7 @@ namespace GildtAPI.Functions
             }
             else
             {
-                Reward reward = await RewardsDAO.Instance.GetRewardById(rewardId);
+                Reward reward = await RewardsController.Instance.GetRewardById(rewardId);
                 if (reward == null)
                 {
                     return new NotFoundObjectResult("Reward not found.");
@@ -92,7 +94,7 @@ namespace GildtAPI.Functions
             {
                 return new BadRequestObjectResult("Invalid input");
             }
-            Reward[] userRewards = await RewardsDAO.Instance.GetUserRewards(count, id);
+            Reward[] userRewards = await RewardsController.Instance.GetUserRewards(count, id);
 
             if (userRewards.Length == 0)
             {
@@ -126,7 +128,7 @@ namespace GildtAPI.Functions
                     : "description");
                 return new BadRequestObjectResult(missingFieldsSummary);
             }
-            bool success = await RewardsDAO.Instance.CreateReward(name, description);
+            bool success = await RewardsController.Instance.CreateReward(name, description);
             if (success)
             {
                 return new OkObjectResult($"Reward \"{name}\" created!");
@@ -139,8 +141,8 @@ namespace GildtAPI.Functions
             Route = "Rewards/{rewardId}/Edit")] HttpRequest req, ILogger log, 
             int rewardId)
         {
-            string name = req.Query["name"];
-            string description = req.Query["description"];
+            string name = Whitelister.GetAlphaFiltered(req.Query["name"]);
+            string description = Whitelister.GetAlphaFiltered(req.Query["description"]);
 
             if (String.IsNullOrWhiteSpace(name) && description == null)
             {
@@ -154,7 +156,7 @@ namespace GildtAPI.Functions
             int rowsaffected;
             try
             {
-                rowsaffected = await RewardsDAO.Instance.EditReward(rewardId, name, description);
+                rowsaffected = await RewardsController.Instance.EditReward(rewardId, name, description);
             }
             catch(Exception e)
             {
@@ -172,7 +174,7 @@ namespace GildtAPI.Functions
 
         }
 
-        [FunctionName( nameof(Rewards) + "-" + nameof(DeleteReward))]
+        [FunctionName(nameof(Rewards) + "-" + nameof(DeleteReward))]
         public static async Task<IActionResult> DeleteReward([HttpTrigger(AuthorizationLevel.Anonymous, "delete", 
             Route = "Rewards/{rewardId}/Delete")] HttpRequest req, ILogger log,
             int rewardId)

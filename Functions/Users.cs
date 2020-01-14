@@ -102,7 +102,7 @@ namespace GildtAPI.Functions
             User user = new User();
             NameValueCollection formData = req.Content.ReadAsFormDataAsync().Result;
             user.Id = Convert.ToInt32(id);
-            user.Username = formData["username"];
+            user.Username = Whitelister.GetAlphaFiltered(formData["username"]);
             user.Email = formData["email"];
             user.Password = formData["password"];
             user.IsAdmin = Convert.ToBoolean(formData["isadmin"]);

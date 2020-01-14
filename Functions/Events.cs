@@ -84,12 +84,12 @@ namespace GildtAPI.Functions
 
             // Read data from input
             NameValueCollection formData = req.Content.ReadAsFormDataAsync().Result;
-            evenT.Name = formData["title"];
-            evenT.Location = formData["location"];
+            evenT.Name = Whitelister.GetAlphaFiltered(formData["title"]);
+            evenT.Location = Whitelister.GetAlphaFiltered(formData["location"]);
             evenT.StartDate = DateTime.Parse(formData["dateTimeStart"]);
             evenT.EndDate = DateTime.Parse(formData["dateTimeEnd"]);
-            evenT.ShortDescription = formData["shortdescription"];
-            evenT.LongDescription = formData["longdescription"];
+            evenT.ShortDescription = Whitelister.GetTextFiltered(formData["shortdescription"]);
+            evenT.LongDescription = Whitelister.GetTextFiltered(formData["longdescription"]);
             evenT.Image = formData["image"];
 
             bool inputIsValid = GlobalFunctions.CheckInputs(evenT.Name, evenT.Location, evenT.StartDate.ToString(), evenT.EndDate.ToString());

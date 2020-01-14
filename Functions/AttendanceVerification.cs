@@ -11,7 +11,6 @@ using GildtAPI.Model;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using GildtAPI.Controllers;
-using GildtAPI.DAO;
 
 namespace GildtAPI.Functions
 {
@@ -39,7 +38,7 @@ namespace GildtAPI.Functions
                 count = Constants.DEFAULTCOUNT;
             }
 
-            List<Attendance> attendanceList = await AttendanceDAO.Instance.GetAttendanceList(eventId, count);
+            List<Attendance> attendanceList = await AttendanceController.Instance.GetAttendanceList(eventId, count);
             if (attendanceList.Count == 0)
             {
                 return new BadRequestObjectResult($"No verifications found for event with id = {eventId}");
@@ -71,22 +70,22 @@ namespace GildtAPI.Functions
                 count = Constants.DEFAULTCOUNT;
             }
 
-            List<Attendance> attendanceList = await AttendanceDAO.Instance.GetUserAttendanceList(userId, count);
+            List<Attendance> attendanceList = await AttendanceController.Instance.GetUserAttendanceList(userId, count);
+            string jAttendance = JsonConvert.SerializeObject(attendanceList.ToArray());
             if (attendanceList.Count == 0)
             {
-                return new BadRequestObjectResult($"No verifications found for user#{userId}");
+                return new OkObjectResult($"No verifications found for user #{userId}");
             }
-            string jAttendance = JsonConvert.SerializeObject(attendanceList.ToArray());
             return new OkObjectResult(jAttendance);
         }
 
-        [FunctionName(nameof(AttendanceVerification) + "-" + nameof(Verify))]
-        public static async Task<IActionResult> Verify([HttpTrigger(AuthorizationLevel.Anonymous, "post",
-            Route = "Attendance/{eventId}/Verify/{userId}")] HttpRequest req, ILogger log,
+        [FunctionName(nameof(AttendanceVerification) + "-" + nameof(AddVerification))]
+        public static async Task<IActionResult> AddVerification([HttpTrigger(AuthorizationLevel.Anonymous, "post",
+            Route = "Attendance/{eventId}/AddVerification/{userId}")] HttpRequest req, ILogger log,
             int userId, int eventId)
         {
             //check if verification exists
-            if (await AttendanceDAO.Instance.CheckVerification(userId, eventId))
+            if (await AttendanceController.Instance.CheckVerification(userId, eventId))
             {
                 return new BadRequestObjectResult($"Verification already exists for user #{userId} at event #{eventId}");
             }
@@ -94,7 +93,7 @@ namespace GildtAPI.Functions
             {
                 try
                 {
-                    await AttendanceDAO.Instance.CreateVerification(userId, eventId);
+                    await AttendanceController.Instance.CreateVerification(userId, eventId);
                 }
                 catch
                 {
@@ -118,7 +117,7 @@ namespace GildtAPI.Functions
             int affectedRows;
             try
             {
-                affectedRows = await AttendanceDAO.Instance.DeleteVerification(userId, eventId);
+                affectedRows = await AttendanceController.Instance.DeleteVerification(userId, eventId);
             }
             catch
             {
@@ -133,9 +132,8 @@ namespace GildtAPI.Functions
                         $"and EventId {eventId} does not exist!");
                 case -1:
                     return new BadRequestObjectResult($"SQL query failed: delete verification for user#{userId} at event#{eventId}");
-                    break;
                 default:
-                    return new OkObjectResult("Deleted the verification. Duplicate verification was found and also deleted.");
+                    return new OkObjectResult("Deleted the verification. Duplicate verification(s) found and also deleted.");
             }
         }
     }

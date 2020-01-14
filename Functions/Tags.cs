@@ -35,6 +35,9 @@ namespace GildtAPI.Functions
             NameValueCollection formData = req.Content.ReadAsFormDataAsync().Result;
             string tag = formData["Name"];
 
+            //Sanitize input
+            tag = Whitelister.GetAlphaFiltered(tag);
+
             // Check if id is valid
             if (!GlobalFunctions.CheckValidId(id))
             {
@@ -63,6 +66,9 @@ namespace GildtAPI.Functions
         {
             NameValueCollection formData = req.Content.ReadAsFormDataAsync().Result;
             string tag = formData["tag"];
+
+            //Sanitize input
+            tag = Whitelister.GetAlphaFiltered(tag);
 
             bool inputIsValid = GlobalFunctions.CheckInputs(tag);
 

@@ -57,8 +57,8 @@ namespace GildtAPI.Functions
 
             // Read data from input
             NameValueCollection formData = req.Content.ReadAsFormDataAsync().Result;
-            coupon.Name = formData["Name"];
-            coupon.Description = formData["Description"];
+            coupon.Name = Whitelister.GetAlphaFiltered(formData["Name"]);
+            coupon.Description = Whitelister.GetTextFiltered(formData["Description"]);
             coupon.StartDate = Convert.ToDateTime(formData["StartDate"]);
             coupon.EndDate = Convert.ToDateTime(formData["EndDate"]);
             coupon.Type = Convert.ToInt32(formData["Type"]);
@@ -100,21 +100,22 @@ namespace GildtAPI.Functions
         public static async Task<HttpResponseMessage> EditCoupon(
             [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "Coupons/{id}")] HttpRequestMessage req,
             ILogger log, string id)
-            {
-                Coupon coupon = new Coupon();
-                NameValueCollection formData = req.Content.ReadAsFormDataAsync().Result;
-                string name = formData["Name"];
-                string description = formData["Description"];
-                string startDate = formData["StartDate"];
-                string endDate = formData["EndDate"];
-                string type = formData["Type"];
-                string image = formData["Image"];
-                
-                int rowsAffected = await CouponController.Instance.Edit(coupon);
+        {
+            Coupon coupon = new Coupon();
+            NameValueCollection formData = req.Content.ReadAsFormDataAsync().Result;
 
-                return rowsAffected > 0
-                ? req.CreateResponse(HttpStatusCode.OK, "Successfully edited the coupon.", "application/json")
-                : req.CreateResponse(HttpStatusCode.BadRequest, "Error editing the coupon.", "application/json");
+            string name = Whitelister.GetAlphaFiltered(formData["Name"]);
+            string description = Whitelister.GetAlphaFiltered(formData["Description"]);
+            string startDate = formData["StartDate"];
+            string endDate = formData["EndDate"];
+            string type = Whitelister.GetAlphaFiltered(formData["Type"]);
+            string image = formData["Image"];
+                
+            int rowsAffected = await CouponController.Instance.Edit(coupon);
+
+            return rowsAffected > 0
+            ? req.CreateResponse(HttpStatusCode.OK, "Successfully edited the coupon.", "application/json")
+            : req.CreateResponse(HttpStatusCode.BadRequest, "Error editing the coupon.", "application/json");
 
         }
 

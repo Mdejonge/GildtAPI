@@ -42,7 +42,7 @@ namespace GildtAPI.DAO
                 $"FROM AttendanceVerification as att " +
                 $"INNER JOIN Users " +
                 $"ON att.UserId = Users.Id " +
-                $"WHERE att.UserId = {userId}";
+                $"WHERE att.UserId = @UserId";
 
             List<Attendance> attendanceList = new List<Attendance>();
 
@@ -51,6 +51,7 @@ namespace GildtAPI.DAO
 
             using (SqlCommand cmd = new SqlCommand(sqlAttendance, conn))
             {
+                cmd.Parameters.AddWithValue("@UserId", userId);
                 SqlDataReader reader = await cmd.ExecuteReaderAsync();
                 while (reader.Read())
                 {
@@ -75,7 +76,7 @@ namespace GildtAPI.DAO
                 $"FROM AttendanceVerification as att " +
                 $"INNER JOIN Users " +
                 $"ON att.UserId = Users.Id ";
-            var sqlWhere = $"WHERE att.EventId = {eventId}";
+            var sqlWhere = $"WHERE att.EventId = @EventId";
             // Checks if an id parameter is filled in
             if (eventId != null)
             {
@@ -90,10 +91,10 @@ namespace GildtAPI.DAO
 
             using (SqlCommand cmd = new SqlCommand(sqlAttendance, conn))
             {
+                cmd.Parameters.AddWithValue("@EventId", eventId);
                 SqlDataReader reader = await cmd.ExecuteReaderAsync();
                 while (reader.Read())
                 {
-
                     attendanceList.Add(
                         new Attendance(
                             int.Parse(reader["UserId"].ToString()),
@@ -132,11 +133,13 @@ namespace GildtAPI.DAO
             // Queries
             var sqlStr =
             "DELETE FROM AttendanceVerification " +
-            $"WHERE UserId = {userId} AND EventId = {eventId}";
+            $"WHERE UserId = @UserId AND EventId = @EventId";
             int affectedRows = -1;
             SqlConnection conn = DBConnect.GetConnection();
             using (SqlCommand cmd = new SqlCommand(sqlStr, conn))
             {
+                cmd.Parameters.AddWithValue("@UserId", userId);
+                cmd.Parameters.AddWithValue("@EventId", eventId);
                 affectedRows = await cmd.ExecuteNonQueryAsync();
                 DBConnect.Dispose(conn);
                 return affectedRows;

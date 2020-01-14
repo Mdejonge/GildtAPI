@@ -44,8 +44,6 @@ namespace GildtAPI.DAO
         }
         public async Task<Reward> GetRewardByName(string rewardName)
         {
-            //whitelist characters to prevent SQL injection
-            rewardName = Whitelister.GetAlphaFiltered(rewardName);
             //SQL query to get newest reward with name
             string sqlQuery =
                 $"SELECT TOP (1) [Id],[Name],[Description] " +
